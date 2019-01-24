@@ -1,74 +1,99 @@
 import React, { Component } from 'react';
 import uuid from 'uuid/v4';
 
-import Task from '../../components/Task';
 import './style.css';
 
 class Home extends Component {
-  state = {
-    tareas: []
-  };
+  constructor(props) {
+    super(props);
+    this.state = {
+      tareas: []
+    };
+  }
 
   componentDidMount() {
-    const tareas = localStorage.getItem("EF2019LAB-tareas");
+    const tareas = localStorage.getItem('OLIVER-tareas');
     if (tareas) {
       this.setState({ tareas: JSON.parse(tareas) });
     }
   }
 
-  handleDone = (e, id) => {
+  onSubmit = e => {
     e.preventDefault();
-    const { tareas } = this.state;
-    tareas[id].done = !tareas[id].done;
-    tareas[id].finishedAt = new Date();
-    this.setState({ tareas });
-    localStorage.setItem("EF2019LAB-tareas", JSON.stringify(tareas));
-  }
 
-  handleSubmit = (e) => {
-    e.preventDefault();
-    const { tareas } = this.state;
     const title = e.target.title.value;
     const description = e.target.description.value;
+    const { tareas } = this.state;
     const task = {
       id: uuid(),
       title,
       description,
-      tags: ['react'],
       createdAt: new Date(),
-      finishedAt: null
-    }
-
+      done: false
+    };
     tareas.push(task);
 
     this.setState({ tareas });
+    localStorage.setItem('OLIVER-tareas', JSON.stringify(tareas));
+
     e.target.reset();
-    localStorage.setItem("EF2019LAB-tareas", JSON.stringify(tareas));
+  };
+
+  handleDelete = (e, id) => {
+    e.preventDefault();
+    const { tareas } = this.state;
+    const tasks = tareas.filter(tarea => tarea.id !== id);
+    this.setState({ tareas: tasks });
+  };
+
+  handleFinish = (e, id) => {
+    e.preventDefault();
+    const { tareas } = this.state;
+    tareas[id].done = !tareas[id].done;
+    this.setState({tareas});
   }
 
   render() {
-    const { tareas } = this.state;
-
+    const options = {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    };
     return (
-      <div>
+      <div className="main">
         <h1>Mi Lista</h1>
-        <form onSubmit={this.handleSubmit}>
+        <form onSubmit={this.onSubmit}>
           <p>
-            <label htmlFor="title">Título<br />
-              <input type="text" id="title" name="title" />
-            </label>
+            <label htmlFor="title">Titulo</label>
+            <br />
+            <input type="text" name="title" id="title" />
           </p>
           <p>
-            <textarea name="description" id="description" cols="100" rows="10" />
+            <textarea name="description" id="description" cols="30" rows="10" />
           </p>
           <p>
             <button type="submit">Crear</button>
           </p>
         </form>
-        {tareas.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map((tarea, index) => (
-          <Task key={tarea.id} tarea={tarea} index={index} handleDone={this.handleDone} />
+        {this.state.tareas.map((tarea, id) => (
+          <div key={id} className="task">
+            <h3 className={tarea.done ? 'finish' : 'oncourse'}>{tarea.title}</h3>
+            <p className="date">
+              {new Date(tarea.createdAt).toLocaleDateString('es-ES', options)}
+            </p>
+            <p>{tarea.description}</p>
+
+            <button onClick={e => this.handleDelete(e, tarea.id)}>
+              Borrar
+            </button>
+
+            <button onClick={e => this.handleFinish(e, id)}>
+              Finalizar
+            </button>
+          </div>
         ))}
-        {!tareas.length && <h2>Crea tu primera tarea</h2>}
+        {!this.state.tareas.length && <h2>No hay tareas creadas</h2>}
       </div>
     );
   }
